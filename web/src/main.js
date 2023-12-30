@@ -111,6 +111,8 @@ async function registerMidiEvents() {
             })
           }
 
+          // TODO: Ensure that history does not grow endless
+          // Maybe limit it to < 2000 entries?
           ext.history.playedNotes.push({
             time: performance.now(),
             timestamp: msg.timestamp,
