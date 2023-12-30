@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>MIDI Deduper</title>
+  
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link href="./lib/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css?v=2" />
+
+  <script src="./lib/bootstrap.bundle.min.js?v=2"></script>
+  <script src="./lib/webmidi.iife.min.js"></script>
+  <script src="./lib/JZZ.js"></script>
+  <script src="./lib/JZZ.midi.SMF.js"></script>
+  <script src="./src/main.js" type="module"></script>
+</head>
+
+<body>
+  <div class="container py-3">
+    <header>
+      <div class="d-flex flex-column flex-md-row align-items-center pb-3 mb-4 border-bottom">
+        <a href="https://fannon.github.io/midi-deduper/" class="d-flex align-items-center text-dark text-decoration-none">
+          <title>MIDI Deduper</title> 
+          <span id="app-title">MIDI Deduper <small class="text-muted">1.2.2</small></span>
+        </a>
+
+        <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
+          <a class="me-3 py-2 text-dark text-decoration-none" target="_blank"
+            href="https://github.com/Fannon/midi-deduper#README">Documentation</a>
+          <a class="me-3 py-2 text-dark text-decoration-none" target="_blank"
+            href="https://www.kvraudio.com/forum/viewtopic.php?t=595693&sid=2f8c8f467ff70df44f7028e8f21bbbaf">KVR Forum Thread</a>
+          <a class="me-3 py-2 text-dark text-decoration-none" target="_blank"
+            href="https://github.com/Fannon/midi-deduper">GitHub</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="row">
+        <div class="col-6 text-start">
+          <button type="button" id="save" class="btn btn-success" data-bs-toggle="tooltip" data-bs-placement="top" title="After changing any of the below settings, press Save & Apply.">Save & Apply Config</button>
+          <button type="button" id="reset-config" class="btn btn-danger" data-bs-toggle="tooltip" data-bs-placement="top" title="Reset Config to defaults, in case there are issues.">Reset Config</button>
+        </div>
+        <div class="col-6 text-end">
+          <button id="clear-history" type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Clears history, recordings and statistics.">Clear History</button>
+          <button id="clear-log" type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear the log below.">Clear Log</button>
+        </div>
+      </div>
+      <br />
+      <div class="row text-left">
+        <div class="col-3">
+          <div class="card text-dark bg-light mb-3">
+            <div class="card-header">MIDI Port Configuration</div>
+            <div class="card-body">
+              <form>
+                <label for="instrumentInputPort" class="form-label"><strong>Input</strong>: Instrument</label>
+                <select id="instrumentInputPort" class="form-select" data-bs-toggle="tooltip" data-bs-placement="left" title="Select your Instrument / LinnStrument MIDI Input port for receiving played notes.">
+                  <option value=""></option>
+                </select>
+
+                <label for="forwardPort1" class="form-label"><strong>Forward</strong>: MIDI Thru 1 <small
+                    class="text-muted">(optional)</small>
+                </label>
+                <select id="forwardPort1" class="form-select" data-bs-toggle="tooltip" data-bs-placement="left" title="MIDI Thru port (1/2), where input from the instrument is forwarded to.">
+                  <option value=""></option>
+                </select>
+
+                <label for="forwardPort2" class="form-label"><strong>Forward</strong>: MIDI Thru 2 <small
+                    class="text-muted">(optional)</small></label>
+                <select id="forwardPort2" class="form-select" data-bs-toggle="tooltip" data-bs-placement="left" title="MIDI Thru port (1/2), where input from the instrument is forwarded to.">
+                  <option value=""></option>
+                </select>
+              </form>
+            </div>
+          </div>
+
+          <div class="card text-dark bg-light mb-3">
+            <div class="card-header">General Configuration</div>
+            <div class="card-body">
+              <form>
+                <!-- <label for="startNoteNumber" class="form-label">Start MIDI Note Number</label>
+                <input id="startNoteNumber" class="form-control" type="text" placeholder="30" data-bs-toggle="tooltip" data-bs-placement="right" title="MIDI Note Number for the first pad in the bottom left corner. Should be auto-detected and synced from LinnStrument settings."> -->
+
+                <label for="timeThreshold" class="form-label">Time Threshold (ms)</label>
+                <input id="timeThreshold" class="form-control" type="text" placeholder="1" data-bs-toggle="tooltip" data-bs-placement="right" title="Below this timing offset, a note is considered a duplicate.">
+
+                <label for="velocityThreshold" class="form-label">Velocity Threshold (0-127)</label>
+                <input id="velocityThreshold" class="form-control" type="text" placeholder="1" data-bs-toggle="tooltip" data-bs-placement="right" title="Only notes below the velocity threshold can be considered duplicates.">
+
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-9">
+          <div class="card text-dark bg-light mb-3">
+            <div class="card-header">Logs <small class="text-muted">(most recent on top)</small>              
+            </div>
+            <div class="card-body" id="log">
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</body>
+
+</html>

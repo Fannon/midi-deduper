@@ -1,0 +1,41 @@
+#app-title {
+  font-weight: 500;
+  font-size: 2em !important;
+}
+
+#log {
+  height: 488px;
+  overflow-y: scroll;
+}
+.card-header button {
+  float: right;
+  margin-left: 8px;
+  padding: 0 8px;
+  height: 24px;
+}
+
+.log-entry {
+  background: #f0f1f2;
+  font-size: 0.85em;
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-bottom: 3px;
+}
+.log-success .msg {
+  color: #35c10e;
+}
+.log-warn .msg {
+  color: #ef9d08;
+}
+.log-error .msg {
+  color: #b61a1a;
+}
+
+.form-label {
+  /* margin-top: .5rem; */
+  margin-bottom: .2rem;
+}
+
+select, input {
+  margin-bottom: .5rem;
+}
