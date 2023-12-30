@@ -117,6 +117,18 @@ async function registerMidiEvents() {
       });
       ext.input.addListener("noteoff", (msg) => {
         // TODO: Somehow detect duplicate noteoff as well? 
+        if (ext.forwardPort1) {
+          ext.forwardPort1.sendNoteOff(msg.note.number, { 
+            channels: msg.message.channel, 
+            rawAttack: msg.rawAttack
+          })
+        }
+        if (ext.forwardPort2) {
+          ext.forwardPort2.sendNoteOff(msg.note.number, { 
+            channels: msg.message.channel, 
+            rawAttack: msg.rawAttack
+          })
+        }
       });
 
       log.success(`Connected to Instrument MIDI Input: ${ext.config.instrumentInputPort}`)
@@ -134,10 +146,10 @@ async function registerMidiEvents() {
   //////////////////////////////////////////
 
   if (ext.input) {
-    // Skipping 'noteon'
+    // Skipping 'noteon' and 'noteoff'
     const autoForwardTypes = [
       // https://webmidijs.org/api/classes/Enumerations#MIDI_CHANNEL_MESSAGES
-      'noteoff', 'keyaftertouch', 'controlchange', 'programchange', 'channelaftertouch', 'pitchbend',
+      'keyaftertouch', 'controlchange', 'programchange', 'channelaftertouch', 'pitchbend',
       // https://webmidijs.org/api/classes/Enumerations#SYSTEM_MESSAGES
       'sysex', 'timecode', 'songposition', 'songselect', 'tunerequest', 'sysexend'
     ]
