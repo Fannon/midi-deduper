@@ -1,0 +1,23 @@
+{
+  "name": "midi-deduper",
+  "version": "1.1.0",
+  "description": "Small web app that helps to deduplicate accidental MIDI double triggers (e.g. by finger drum pads)",
+  "main": "index.js",
+  "scripts": {
+    "build": "bash ./bin/updateLibs.sh",
+    "deploy": "gh-pages -d ./web && echo https://fannon.github.io/midi-deduper/",
+    "start": "live-server ./web"
+  },
+  "author": "Simon Heimler",
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap": "^5.3.2",
+    "jzz": "^1.7.7",
+    "jzz-midi-smf": "^1.8.4",
+    "webmidi": "^3.1.8"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.1",
+    "live-server": "^1.2.2"
+  }
+}

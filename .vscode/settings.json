@@ -1,0 +1,20 @@
+{
+    "cSpell.words": [
+        "controlchange",
+        "dataentrycoarse",
+        "dataentryfine",
+        "easymidi",
+        "keyaftertouch",
+        "linnstrument",
+        "nonregisteredparametercoarse",
+        "nonregisteredparameterfine",
+        "noteoff",
+        "noteon",
+        "Nrpn",
+        "registeredparametercoarse",
+        "registeredparameterfine",
+        "Strument",
+        "Synthesia",
+        "webmidi"
+    ]
+}
