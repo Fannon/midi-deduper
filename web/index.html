@@ -28,7 +28,7 @@
         </a>
         <a href="https://fannon.github.io/midi-deduper/" class="d-flex align-items-center text-dark text-decoration-none">
           <title>MIDI Deduper</title> 
-          <span id="app-title">MIDI Deduper <small class="text-muted">1.2.2</small></span>
+          <span id="app-title">MIDI Deduper <small class="text-muted">0.1.0</small></span>
         </a>
 
         <nav class="d-inline-flex mt-2 mt-md-0 ms-md-auto">
@@ -51,6 +51,7 @@
         <div class="col-6 text-end">
           <button id="clear-history" type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Clears history, recordings and statistics.">Clear History</button>
           <button id="clear-log" type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Clear the log below.">Clear Log</button>
+          <button id="calculate-statistics" type="button" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Calculates statistics on how the played notes compare against the Light Guide notes. This also happens automatically after some play breaks.">Statistics</button>
         </div>
       </div>
       <br />
@@ -60,19 +61,19 @@
             <div class="card-header">MIDI Port Configuration</div>
             <div class="card-body">
               <form>
-                <label for="instrumentInputPort" class="form-label"><strong>Input</strong>: Instrument</label>
+                <label for="instrumentInputPort" class="form-label"><strong>Input</strong> MIDI Device</label>
                 <select id="instrumentInputPort" class="form-select" data-bs-toggle="tooltip" data-bs-placement="left" title="Select your Instrument / LinnStrument MIDI Input port for receiving played notes.">
                   <option value=""></option>
                 </select>
 
-                <label for="forwardPort1" class="form-label"><strong>Forward</strong>: MIDI Thru 1 <small
+                <label for="forwardPort1" class="form-label"><strong>Forward 1</strong> MIDI Device <small
                     class="text-muted">(optional)</small>
                 </label>
                 <select id="forwardPort1" class="form-select" data-bs-toggle="tooltip" data-bs-placement="left" title="MIDI Thru port (1/2), where input from the instrument is forwarded to.">
                   <option value=""></option>
                 </select>
 
-                <label for="forwardPort2" class="form-label"><strong>Forward</strong>: MIDI Thru 2 <small
+                <label for="forwardPort2" class="form-label"><strong>Forward 2</strong> MIDI Device <small
                     class="text-muted">(optional)</small></label>
                 <select id="forwardPort2" class="form-select" data-bs-toggle="tooltip" data-bs-placement="left" title="MIDI Thru port (1/2), where input from the instrument is forwarded to.">
                   <option value=""></option>
@@ -85,9 +86,6 @@
             <div class="card-header">General Configuration</div>
             <div class="card-body">
               <form>
-                <!-- <label for="startNoteNumber" class="form-label">Start MIDI Note Number</label>
-                <input id="startNoteNumber" class="form-control" type="text" placeholder="30" data-bs-toggle="tooltip" data-bs-placement="right" title="MIDI Note Number for the first pad in the bottom left corner. Should be auto-detected and synced from LinnStrument settings."> -->
-
                 <label for="timeThreshold" class="form-label">Time Threshold (ms)</label>
                 <input id="timeThreshold" class="form-control" type="text" placeholder="1" data-bs-toggle="tooltip" data-bs-placement="right" title="Below this timing offset, a note is considered a duplicate.">
 
@@ -109,6 +107,19 @@
         </div>
 
       </div>
+      <div class="row text-left">
+        <div class="col-12 text-start">
+          <p><strong>Documentation:</strong> See <a href="https://github.com/Fannon/midi-deduper?tab=readme-ov-file#user-guide">User Guide</a>.</p>
+          <ul>
+            <li>Use a (virtual) MIDI loopback device.</li>
+            <li>Choose your input MIDI device and pick your loopback device as your forward device.</li>
+            <li>Save & Apply Config.</li>
+            <li>Tweak options as necessary.</li>
+          </ul>
+        </div>
+        
+      </div>
+      <br />
     </main>
   </div>
 </body>

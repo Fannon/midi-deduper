@@ -1,8 +1,7 @@
 import { log } from "./log.js";
-import { initConfig, resetConfig, saveConfig, updateSettingsInUI } from "./config.js";
-import { measureNoteTiming, calculateStatistics, logGuideNoteTiming } from "./statistics.js";
-import { createMidiInputRecording, exportMidiInputRecording } from "./recorder.js";
+import { initConfig, resetConfig, saveConfig } from "./config.js";
 import { detectDuplicateNote } from "./detector.js";
+import { calculateStatistics } from "./statistics.js";
 
 /**
  * Global namespace, aliased to `window.ext`
@@ -12,28 +11,7 @@ export const ext = {
   history: {
     /** Only played note-on messages */
     playedNotes: [],
-  },
-  recording: {
-    tick: 0,
-    tickTimer: null,
-    /** instrument incoming MIDI input message */
-    midiInput: {
-      file: null,
-      track: null,
-    },
-    /** guide notes incoming MIDI input message */
-    guideInput: {
-      file: null,
-      track: null,
-    },
-  },
-  stats: {
-    guideNoteTimings: [],
-  },
-  device: {
-    linnStrument: {
-      lastStateUpdate: null,
-    }
+    duplicatedNotes: [],
   },
   fn: {
     resetConfig,
@@ -61,8 +39,6 @@ async function init() {
   await registerMidiEvents()
 
   log.info(`Successfully initialized.`)
-
-  createMidiInputRecording()
 }
 
 /**
@@ -76,6 +52,7 @@ async function registerUiEvents() {
   document.getElementById("reset-config").addEventListener("click", resetConfig);
   document.getElementById("clear-log").addEventListener("click", clearLog);
   document.getElementById("clear-history").addEventListener("click", clearHistory);
+  document.getElementById("calculate-statistics").addEventListener("click", calculateStatistics);
 
   // Enable tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -110,30 +87,37 @@ async function registerMidiEvents() {
               rawAttack: msg.rawAttack
             })
           }
+          if (ext.forwardPort2) {
+            ext.forwardPort2.sendNoteOn(msg.note.number, { 
+              channels: msg.message.channel, 
+              rawAttack: msg.rawAttack
+            })
+          }
 
           // TODO: Ensure that history does not grow endless
-          // Maybe limit it to < 2000 entries?
+          if (ext.history.playedNotes.length >= 1500) {
+            ext.history.playedNotes = ext.history.playedNotes.splice(500)
+            console.log('Spliced', ext.history.playedNotes)
+          }
+
           ext.history.playedNotes.push({
-            time: performance.now(),
             timestamp: msg.timestamp,
             noteNumber: msg.note.number,
-            rawAttack: msg.rawAttack
+            rawVelocity: msg.rawVelocity
           })
-  
-          // Add it to MIDI input recording
-          const jzzMsg = JZZ.MIDI.noteOn(msg.message.channel, msg.note.number, msg.rawVelocity)
-          ext.recording.midiInput.track.add(ext.recording.tick, jzzMsg);
+
+        } else {
+          ext.history.duplicatedNotes.push({
+            timestamp: msg.timestamp,
+            noteNumber: msg.note.number,
+            rawVelocity: msg.rawVelocity,
+            timeDiff: duplicate
+          })
         }
 
       });
       ext.input.addListener("noteoff", (msg) => {
-
         // TODO: Somehow detect duplicate noteoff as well? 
-        // Not entirely sure how to do this best
-
-        // Add it to MIDI input recording
-        const jzzMsg = JZZ.MIDI.noteOff(msg.message.channel, msg.note.number, msg.rawVelocity)
-        ext.recording.midiInput.track.add(ext.recording.tick, jzzMsg);
       });
 
       log.success(`Connected to Instrument MIDI Input: ${ext.config.instrumentInputPort}`)
@@ -190,37 +174,12 @@ async function registerMidiEvents() {
   return
 }
 
-//////////////////////////////////////////
-// HELPER FUNCTIONS                     //
-//////////////////////////////////////////
-
 function clearLog() {
   document.getElementById("log").innerHTML = ''
 }
 
 function clearHistory() {
   ext.history.playedNotes = []
-  ext.stats.guideNoteTimings = []
-  createMidiInputRecording()
-}
-
-function checkForStatisticsDump() {
-  if (ext.stats.guideNoteTimings.length > 0) {
-    const lastItem = ext.stats.guideNoteTimings.slice(-1)[0] 
-    if (lastItem && lastItem.time < performance.now() - ext.config.guideNotesPausedThreshold) {
-      console.debug('Guide Note Timings', ext.stats.guideNoteTimings)
-      calculateStatistics()
-      ext.stats.guideNoteTimings = []
-    }
-  }
-}
-
-function checkForMidiDump() {
-  if (ext.recording.midiInput.track.length > 3) {
-    const lastItem = ext.history.playedNotes.slice(-1)[0]
-    if (lastItem.time < performance.now() - ext.config.playedNotesPausedThreshold) {
-      exportMidiInputRecording()
-      createMidiInputRecording()
-    }
-  }
+  ext.history.duplicatedNotes = []
+  log.info('Cleared History of played and duplicated notes.')
 }

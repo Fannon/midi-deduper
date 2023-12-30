@@ -5,6 +5,10 @@
 This [web app](https://fannon.github.io/midi-deduper/) allows you to de-duplicate accidental MIDI double triggers, as caused e.g. by some MIDI pad controllers.
 It runs on any modern [Web MIDI enabled browser](https://caniuse.com/midi). 
 
+## Screenshot
+
+![Synthesia Light Guide](./assets/screenshot.png)
+
 ## User Guide
 
 First, you need to have a (virtual) MIDI Loop device, e.g. like [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) for Windows.
