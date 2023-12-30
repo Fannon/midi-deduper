@@ -87,7 +87,8 @@ export function saveConfig(config, event) {
     event.preventDefault() 
   }
 
-  // config.startNoteNumber = parseInt(document.getElementById("startNoteNumber").value);
+  config.timeThreshold = parseInt(document.getElementById("timeThreshold").value);
+  config.velocityThreshold = parseInt(document.getElementById("velocityThreshold").value);
 
   config.instrumentInputPort = document.getElementById("instrumentInputPort").value;
   config.forwardPort1 = document.getElementById("forwardPort1").value;

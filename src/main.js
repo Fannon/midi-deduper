@@ -1,7 +1,5 @@
 import { log } from "./log.js";
-import { initConfig, resetConfig, saveConfig, updateSettingsInUI } from "./config.js";
-import { measureNoteTiming, calculateStatistics, logGuideNoteTiming } from "./statistics.js";
-import { createMidiInputRecording, exportMidiInputRecording } from "./recorder.js";
+import { initConfig, resetConfig, saveConfig } from "./config.js";
 import { detectDuplicateNote } from "./detector.js";
 
 /**
@@ -12,28 +10,7 @@ export const ext = {
   history: {
     /** Only played note-on messages */
     playedNotes: [],
-  },
-  recording: {
-    tick: 0,
-    tickTimer: null,
-    /** instrument incoming MIDI input message */
-    midiInput: {
-      file: null,
-      track: null,
-    },
-    /** guide notes incoming MIDI input message */
-    guideInput: {
-      file: null,
-      track: null,
-    },
-  },
-  stats: {
-    guideNoteTimings: [],
-  },
-  device: {
-    linnStrument: {
-      lastStateUpdate: null,
-    }
+    duplicatedNotes: [],
   },
   fn: {
     resetConfig,
@@ -61,8 +38,6 @@ async function init() {
   await registerMidiEvents()
 
   log.info(`Successfully initialized.`)
-
-  createMidiInputRecording()
 }
 
 /**
@@ -110,9 +85,19 @@ async function registerMidiEvents() {
               rawAttack: msg.rawAttack
             })
           }
+          if (ext.forwardPort2) {
+            ext.forwardPort2.sendNoteOn(msg.note.number, { 
+              channels: msg.message.channel, 
+              rawAttack: msg.rawAttack
+            })
+          }
 
           // TODO: Ensure that history does not grow endless
-          // Maybe limit it to < 2000 entries?
+          if (ext.history.playedNotes.length >= 1500) {
+            ext.history.playedNotes = ext.history.playedNotes.splice(500)
+            console.log('Spliced', ext.history.playedNotes)
+          }
+
           ext.history.playedNotes.push({
             time: performance.now(),
             timestamp: msg.timestamp,
@@ -123,6 +108,13 @@ async function registerMidiEvents() {
           // Add it to MIDI input recording
           const jzzMsg = JZZ.MIDI.noteOn(msg.message.channel, msg.note.number, msg.rawVelocity)
           ext.recording.midiInput.track.add(ext.recording.tick, jzzMsg);
+        } else {
+          ext.history.duplicatedNotes.push({
+            time: performance.now(),
+            timestamp: msg.timestamp,
+            noteNumber: msg.note.number,
+            rawAttack: msg.rawAttack
+          })
         }
 
       });
@@ -200,27 +192,5 @@ function clearLog() {
 
 function clearHistory() {
   ext.history.playedNotes = []
-  ext.stats.guideNoteTimings = []
-  createMidiInputRecording()
-}
-
-function checkForStatisticsDump() {
-  if (ext.stats.guideNoteTimings.length > 0) {
-    const lastItem = ext.stats.guideNoteTimings.slice(-1)[0] 
-    if (lastItem && lastItem.time < performance.now() - ext.config.guideNotesPausedThreshold) {
-      console.debug('Guide Note Timings', ext.stats.guideNoteTimings)
-      calculateStatistics()
-      ext.stats.guideNoteTimings = []
-    }
-  }
-}
-
-function checkForMidiDump() {
-  if (ext.recording.midiInput.track.length > 3) {
-    const lastItem = ext.history.playedNotes.slice(-1)[0]
-    if (lastItem.time < performance.now() - ext.config.playedNotesPausedThreshold) {
-      exportMidiInputRecording()
-      createMidiInputRecording()
-    }
-  }
+  ext.history.duplicatedNotes = []
 }
