@@ -1,6 +1,6 @@
 {
   "name": "midi-deduper",
-  "version": "1.1.0",
+  "version": "0.2.0",
   "description": "Small web app that helps to deduplicate accidental MIDI double triggers (e.g. by finger drum pads)",
   "main": "index.js",
   "scripts": {
