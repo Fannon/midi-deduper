@@ -95,9 +95,8 @@ async function registerMidiEvents() {
           }
 
           // TODO: Ensure that history does not grow endless
-          if (ext.history.playedNotes.length >= 1500) {
-            ext.history.playedNotes = ext.history.playedNotes.splice(500)
-            console.log('Spliced', ext.history.playedNotes)
+          if (ext.history.playedNotes.length >= ext.config.historyMaxSize) {
+            ext.history.playedNotes = ext.history.playedNotes.splice(ext.config.historyMaxSize / 10)
           }
 
           ext.history.playedNotes.push({

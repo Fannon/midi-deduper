@@ -5,7 +5,7 @@ export const defaultConfig = {
   //////////////////////////////////////////
 
   instrumentInputPort: 'Finger Drum Pad',
-  forwardPort1: 'loopforward',
+  forwardPort1: 'loopMIDI Port',
   forwardPort2: '',
 
   //////////////////////////////////////////
@@ -20,13 +20,15 @@ export const defaultConfig = {
   /**
    * How low the velocity needs to be to be detected as duplicate at all
    */
-  velocityThreshold: 127
+  velocityThreshold: 127,
 
 
   //////////////////////////////////////////
   // Advanced Options (no UI)             //
   //////////////////////////////////////////
 
+  // How long the history is allowed to grow at most
+  historyMaxSize: 4000, 
 }
 
 export function initConfig() {
