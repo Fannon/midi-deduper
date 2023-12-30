@@ -1,6 +1,13 @@
+.navbar {
+  padding: 0 !important;
+  border: none !important;
+}
 #app-title {
   font-weight: 500;
   font-size: 2em !important;
+}
+.navbar-brand {
+  margin-right: 12px;
 }
 
 #log {
