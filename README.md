@@ -5,6 +5,11 @@
 This [web app](https://fannon.github.io/midi-deduper/) allows you to de-duplicate accidental MIDI double triggers, as caused e.g. by some MIDI pad controllers.
 It runs on any modern [Web MIDI enabled browser](https://caniuse.com/midi). 
 
+Why did I create this project? I have a (finger) drum pad controller, which tends to produce accidental double triggers. 
+This is actually not uncommon for pad controllers, especially when the sensitivity is increased / high. 
+
+Such accidental double triggers may be annoying when recording, but will also especially cause problems when playing with [Melodics](https://melodics.com/) or similar software that scores you on correct playing.
+
 ## Screenshot
 
 ![Synthesia Light Guide](./assets/screenshot.png)
