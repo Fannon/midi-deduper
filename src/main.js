@@ -1,6 +1,7 @@
 import { log } from "./log.js";
 import { initConfig, resetConfig, saveConfig } from "./config.js";
 import { detectDuplicateNote } from "./detector.js";
+import { calculateStatistics } from "./statistics.js";
 
 /**
  * Global namespace, aliased to `window.ext`
@@ -51,6 +52,7 @@ async function registerUiEvents() {
   document.getElementById("reset-config").addEventListener("click", resetConfig);
   document.getElementById("clear-log").addEventListener("click", clearLog);
   document.getElementById("clear-history").addEventListener("click", clearHistory);
+  document.getElementById("calculate-statistics").addEventListener("click", calculateStatistics);
 
   // Enable tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -99,33 +101,23 @@ async function registerMidiEvents() {
           }
 
           ext.history.playedNotes.push({
-            time: performance.now(),
             timestamp: msg.timestamp,
             noteNumber: msg.note.number,
-            rawAttack: msg.rawAttack
+            rawVelocity: msg.rawVelocity
           })
-  
-          // Add it to MIDI input recording
-          const jzzMsg = JZZ.MIDI.noteOn(msg.message.channel, msg.note.number, msg.rawVelocity)
-          ext.recording.midiInput.track.add(ext.recording.tick, jzzMsg);
+
         } else {
           ext.history.duplicatedNotes.push({
-            time: performance.now(),
             timestamp: msg.timestamp,
             noteNumber: msg.note.number,
-            rawAttack: msg.rawAttack
+            rawVelocity: msg.rawVelocity,
+            timeDiff: duplicate
           })
         }
 
       });
       ext.input.addListener("noteoff", (msg) => {
-
         // TODO: Somehow detect duplicate noteoff as well? 
-        // Not entirely sure how to do this best
-
-        // Add it to MIDI input recording
-        const jzzMsg = JZZ.MIDI.noteOff(msg.message.channel, msg.note.number, msg.rawVelocity)
-        ext.recording.midiInput.track.add(ext.recording.tick, jzzMsg);
       });
 
       log.success(`Connected to Instrument MIDI Input: ${ext.config.instrumentInputPort}`)
@@ -182,10 +174,6 @@ async function registerMidiEvents() {
   return
 }
 
-//////////////////////////////////////////
-// HELPER FUNCTIONS                     //
-//////////////////////////////////////////
-
 function clearLog() {
   document.getElementById("log").innerHTML = ''
 }
@@ -193,4 +181,5 @@ function clearLog() {
 function clearHistory() {
   ext.history.playedNotes = []
   ext.history.duplicatedNotes = []
+  log.info('Cleared History of played and duplicated notes.')
 }

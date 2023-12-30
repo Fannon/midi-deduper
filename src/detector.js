@@ -10,13 +10,13 @@ export function detectDuplicateNote(msg) {
 
     if (timeDiff < ext.config.timeThreshold) {
       if (msg.rawVelocity < ext.config.velocityThreshold) {
-        log.warn(`Duplicate Note detected: ${msg.note.identifier} (${msg.rawVelocity}) with interval: ${timeDiff}ms`)
+        log.warn(`Duplicate Note detected: Note: ${msg.note.identifier} | Velocity: ${msg.rawVelocity} | Interval: ${timeDiff}ms`)
         console.debug(msg)
-        return true
+        return timeDiff
       }
     }
 
-    // TODO: Support note-off de-duplication
+    // TODO: Support note-off de-duplication?
     // Idea: Create map which notes are currently on. 
     //       Remember when the last duplicate note-on was
     //       If note is currently off, ignore the second note-off
