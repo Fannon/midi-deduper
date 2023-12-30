@@ -8,6 +8,9 @@ import { calculateStatistics } from "./statistics.js";
  */
 export const ext = {
   config: {},
+  state: {
+    noteState: {},
+  },
   history: {
     /** Only played note-on messages */
     playedNotes: [],
@@ -77,6 +80,9 @@ async function registerMidiEvents() {
         throw new Error('Could not connect to Instrument MIDI Input')
       }
       ext.input.addListener("noteon", (msg) => {
+
+        ext.state.noteState[msg.note.number] = true
+
         const duplicate = detectDuplicateNote(msg, ext.history.playedNotes)
 
         if (!duplicate) {
@@ -116,19 +122,29 @@ async function registerMidiEvents() {
 
       });
       ext.input.addListener("noteoff", (msg) => {
-        // TODO: Somehow detect duplicate noteoff as well? 
-        if (ext.forwardPort1) {
-          ext.forwardPort1.sendNoteOff(msg.note.number, { 
-            channels: msg.message.channel, 
-            rawAttack: msg.rawAttack
-          })
+
+        // TODO: Better duplicate noteoff handling
+        // Right now the first noteoff will be forwarded and a second one discarded
+        // Usually the second noteoff would actually be the correct one to keep
+        // But handling this correctly without accidentally keeping notes on is some more effort.
+        
+        // Only send note-off if note is still on
+        if (ext.state.noteState[msg.note.number]) {
+          ext.state.noteState[msg.note.number] = false
+          if (ext.forwardPort1) {
+            ext.forwardPort1.sendNoteOff(msg.note.number, { 
+              channels: msg.message.channel, 
+              rawAttack: msg.rawAttack
+            })
+          }
+          if (ext.forwardPort2) {
+            ext.forwardPort2.sendNoteOff(msg.note.number, { 
+              channels: msg.message.channel, 
+              rawAttack: msg.rawAttack
+            })
+          }
         }
-        if (ext.forwardPort2) {
-          ext.forwardPort2.sendNoteOff(msg.note.number, { 
-            channels: msg.message.channel, 
-            rawAttack: msg.rawAttack
-          })
-        }
+
       });
 
       log.success(`Connected to Instrument MIDI Input: ${ext.config.instrumentInputPort}`)
