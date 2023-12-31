@@ -21,21 +21,22 @@ First, you need to have a (virtual) MIDI Loop device, e.g. like [loopMIDI](https
 In the web app, choose your MIDI Input (the device you play) and then choose the MIDI loop device.
 Don't forget to hit the "Save & Apply" button after you made changes.
 
-How the detection works:
+> 🤙 If you have questions, ideas or issues, feel free to create an [issue](https://github.com/Fannon/midi-deduper/issues) or write in the [KVR forum thread](https://www.kvraudio.com/forum/viewtopic.php?p=8819564).
+
+### How the detection works
+
 * A history of your played notes is kept (until a certain size)
-* When a new note is incoming, the history is searched for another note
+* When a new note is incoming, the history is searched for recent notes
   * with the same note number
-  * within the time threshold
-  * below the velocity threshold
+  * within the time threshold (configurable option)
+  * below the velocity threshold (configurable option)
 * If all of the above criteria apply, the note-on event is filtered out
 * Note-off events are also filtered out, but by a simple "first-wins" approach (could be improved in the future)
 
-If you have questions, ideas or issues, feel free to create an [issue](https://github.com/Fannon/midi-deduper/issues) or write in the [KVR forum thread](https://www.kvraudio.com/forum/viewtopic.php?p=8819564).
-
 ## Developer Guide
 
-* Install Node.js if not there
-* Check out this repository
+* Requires a recent [Node.js](https://nodejs.org/en) runtime
+* Git clone this repository
 * Run `npm install`
 * Run `npm run build` (to copy over dependencies to webapp)
 * Run `npm start` 
