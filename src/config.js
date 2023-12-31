@@ -28,7 +28,7 @@ export const defaultConfig = {
   //////////////////////////////////////////
 
   // How long the history is allowed to grow at most
-  historyMaxSize: 5000, 
+  historyMaxSize: 25000, 
 }
 
 export function initConfig() {

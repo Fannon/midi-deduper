@@ -3,27 +3,32 @@ import { log } from './log.js'
 
 export function detectDuplicateNote(msg) {
   const history = ext.history.playedNotes || []
-  const lastNote = history.findLast((el) => el.noteNumber === msg.note.number);
+  const lastNote = findLatestNote(msg, history)
 
   if (lastNote) {
     const timeDiff = Math.round(msg.timestamp - lastNote.timestamp)
-
-    if (timeDiff < ext.config.timeThreshold) {
-      if (msg.rawVelocity < ext.config.velocityThreshold) {
-        log.warn(`Duplicate Note detected: Note: ${msg.note.identifier} | Velocity: ${msg.rawVelocity} | Interval: ${timeDiff}ms`)
-        console.debug(msg)
-        return timeDiff
-      }
+    if (msg.rawVelocity < ext.config.velocityThreshold) {
+      log.warn(`Duplicate Note detected: Note: ${msg.note.identifier} | Velocity: ${msg.rawVelocity} | Interval: ${timeDiff}ms`)
+      console.debug(msg)
+      return timeDiff
     }
-
-    // TODO: Support note-off de-duplication?
-    // Idea: Create map which notes are currently on. 
-    //       Remember when the last duplicate note-on was
-    //       If note is currently off, ignore the second note-off
-    //       If note is currently on, look how quick the note-off came after the last duplicate note
-    //          If this is lower than timeThreshold, ignore it
-    //          Somehow ensure that note-off will be triggered after some time ?
   }
 
   return false
+}
+
+function findLatestNote(latestMessage, history) {
+  console.log(latestMessage)
+  for (let i = history.length - 1; i >= 0; i--) {
+    console.log(i, history[i])
+    if (history[i].noteNumber !== latestMessage.note.number) {
+      continue
+    }
+    const timeDiff = latestMessage.timestamp - history[i].timestamp
+    if (timeDiff > ext.config.timeThreshold) {
+      return undefined // stop looking if entries are too old anyway
+    } 
+    return history[i]
+  }
+  return undefined
 }
