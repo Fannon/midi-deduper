@@ -15,7 +15,7 @@ export const defaultConfig = {
   /**
    * How much time between notes need to pass at least, to not be a duplicate
    */
-  timeThreshold: 75, 
+  timeThreshold: 60, 
 
   /**
    * How low the velocity needs to be to be detected as duplicate at all
