@@ -21,7 +21,7 @@ First, you need to have a (virtual) MIDI Loop device, e.g. like [loopMIDI](https
 In the web app, choose your MIDI Input (the device you play) and then choose the MIDI loop device.
 Don't forget to hit the "Save & Apply" button after you made changes.
 
-If you have questions, ideas or issues, feel free to create an [issue](https://github.com/Fannon/midi-deduper/issues).
+If you have questions, ideas or issues, feel free to create an [issue](https://github.com/Fannon/midi-deduper/issues) or write in the [KVR forum thread](https://www.kvraudio.com/forum/viewtopic.php?p=8819564).
 
 ## Developer Guide
 
