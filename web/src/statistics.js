@@ -20,7 +20,7 @@ export function calculateStatistics() {
   console.debug(`Statistics`, stats)
 
   let output = `<strong>Statistics:</strong> `
-  output += `Notes played: ${stats.notesPlayed} | Duplicate Notes: ${stats.duplicatedNotes} | Ratio: ${Math.round(stats.avgDuplicatedNoteRatio * 100)}% | `
+  output += `Notes played: ${stats.notesPlayed} | Duplicate Notes: ${stats.duplicatedNotes} | Ratio: ${stats.avgDuplicatedNoteRatio * 100}% | `
   output += `Avg. time diff: ${stats.avgTimeDiff || 0}ms`
 
   log.info(output)
