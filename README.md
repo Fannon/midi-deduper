@@ -12,17 +12,16 @@ Such accidental double triggers may be annoying when recording, but will also es
 
 ## Screenshot
 
-![Synthesia Light Guide](./assets/screenshot.png)
+![Screenshot](./assets/screenshot.png)
 
 ## User Guide
 
 First, you need to have a (virtual) MIDI Loop device, e.g. like [loopMIDI](https://www.tobias-erichsen.de/software/loopmidi.html) for Windows.
 
 In the web app, choose your MIDI Input (the device you play) and then choose the MIDI loop device.
+Don't forget to hit the "Save & Apply" button after you made changes.
 
-## TODO and Ideas
-
-* Create a GitHub issue in this project if you have an idea or run into a problem.
+If you have questions, ideas or issues, feel free to create an [issue](https://github.com/Fannon/midi-deduper/issues).
 
 ## Developer Guide
 
