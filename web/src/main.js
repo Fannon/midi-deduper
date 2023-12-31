@@ -127,6 +127,14 @@ async function registerMidiEvents() {
         // Right now the first noteoff will be forwarded and a second one discarded
         // Usually the second noteoff would actually be the correct one to keep
         // But handling this correctly without accidentally keeping notes on is some more effort.
+
+        // Idea:  Create map which notes are currently on. 
+        //        Remember when the last duplicate note-on was
+        //        If note is currently off, ignore the second note-off
+        //        If note is currently on, look how quick the note-off came after the last duplicate note
+        //            If this is lower than timeThreshold, ignore it
+        //            Somehow ensure that note-off will be triggered after some time ?
+        // Idea 2: Keep track of whether a note-on duplicate has already been resolved or not.
         
         // Only send note-off if note is still on
         if (ext.state.noteState[msg.note.number]) {
