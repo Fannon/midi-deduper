@@ -8,6 +8,7 @@ export function calculateStatistics() {
   }
 
   stats.avgDuplicatedNoteRatio = Math.round((stats.duplicatedNotes / (stats.notesPlayed || 1)) * 10000) / 10000
+
   const intervals = ext.history.duplicatedNotes.map((el) => {
     return el.timeDiff
   })
@@ -15,7 +16,7 @@ export function calculateStatistics() {
   for (let i = 0; i < intervals.length; i++) {
       total += intervals[i];
   }
-  stats.avgTimeDiff = total / intervals.length;
+  stats.avgTimeDiff = Math.round((total / (intervals.length || 1)) * 10000) / 10000
 
   console.debug(`Statistics`, stats)
 
