@@ -21,17 +21,17 @@ const version = "1.0.0"
 
 var (
 	// CLI flags
-	inputDevice      = flag.String("input", "", "Input MIDI device name (default: auto-detect from list)")
-	outputDevice     = flag.String("output", "", "Output MIDI device name (default: auto-detect from list)")
-	timeThreshold    = flag.Int("time", 50, "Time threshold in milliseconds for duplicate detection")
+	inputDevice       = flag.String("input", "", "Input MIDI device name (default: auto-detect from list)")
+	outputDevice      = flag.String("output", "", "Output MIDI device name (default: auto-detect from list)")
+	timeThreshold     = flag.Int("time", 50, "Time threshold in milliseconds for duplicate detection")
 	velocityThreshold = flag.Int("velocity", 127, "Velocity threshold (0-127) for duplicate detection")
-	listDevices      = flag.Bool("list", false, "List available MIDI devices and exit")
-	waitSeconds      = flag.Int("wait", 0, "Startup delay in seconds (useful for Windows Service)")
-	debug            = flag.Bool("debug", false, "Enable debug logging (also writes to ./tmp/<ISO-date>.log)")
-	showVersion      = flag.Bool("version", false, "Show version and exit")
+	listDevices       = flag.Bool("list", false, "List available MIDI devices and exit")
+	waitSeconds       = flag.Int("wait", 0, "Startup delay in seconds (useful for Windows Service)")
+	debug             = flag.Bool("debug", false, "Enable debug logging (also writes to ./tmp/<ISO-date>.log)")
+	showVersion       = flag.Bool("version", false, "Show version and exit")
 
 	// Default device lists
-	defaultInputs = []string{"Finger Drum Pad"}
+	defaultInputs  = []string{"Finger Drum Pad"}
 	defaultOutputs = []string{"loop1", "loopMIDI Port"}
 
 	// Debug log file

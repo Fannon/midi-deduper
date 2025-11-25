@@ -40,3 +40,54 @@ Don't forget to hit the "Save & Apply" button after you made changes.
 * Run `npm install`
 * Run `npm run build` (to copy over dependencies to webapp)
 * Run `npm start` 
+
+## Go CLI Implementation
+
+A standalone Go executable is available for running as a background service or CLI tool.
+
+### Build Instructions
+
+> **New to Go?** Check out our detailed [Building Guide](BUILDING.md) for step-by-step instructions on setting up Go, GCC, and compiling the project.
+
+1. **Prerequisites**:
+   - Go (installed)
+   - C Compiler (TDM-GCC or MinGW-w64) - Required for `rtmididrv`
+
+2. **Build**:
+   ```powershell
+   go mod tidy
+   go build -o midi-deduper.exe ./cmd/midi-deduper
+   ```
+
+### Usage
+
+```bash
+# List devices
+midi-deduper.exe -list
+
+# Run with defaults (looks for "Finger Drum Pad" -> "loop1")
+midi-deduper.exe
+
+# Run with specific devices and thresholds
+midi-deduper.exe -input "My Keyboard" -output "LoopMIDI" -time 60 -velocity 100
+
+# Run with debug logging (writes to ./tmp/)
+midi-deduper.exe -debug
+```
+
+### Windows Service Setup (NSSM)
+
+To run as a background service that starts automatically:
+
+1. Download **NSSM** (Non-Sucking Service Manager).
+2. Install the service:
+   ```powershell
+   nssm install MidiDeduper "C:\path\to\midi-deduper.exe"
+   ```
+3. Configure arguments in NSSM GUI:
+   - Arguments: `-wait 10 -input "My Device" -output "loopMIDI"`
+   - The `-wait 10` is important to allow the loopMIDI driver to initialize before the deduper starts.
+4. Start the service:
+   ```powershell
+   nssm start MidiDeduper
+   ```

@@ -1,0 +1,46 @@
+name: Go Build
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+        check-latest: true
+
+    - name: Install Dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev
+
+    - name: Build
+      run: |
+        go mod tidy
+        go build -v -o midi-deduper-${{ matrix.os }} ./cmd/midi-deduper
+      shell: bash
+
+    - name: Test
+      run: go test -v ./...
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: midi-deduper-${{ matrix.os }}
+        path: midi-deduper-${{ matrix.os }}*
