@@ -29,6 +29,7 @@ var (
 	waitSeconds       = flag.Int("wait", 0, "Startup delay in seconds (useful for Windows Service)")
 	debug             = flag.Bool("debug", false, "Enable debug logging (also writes to ./tmp/<ISO-date>.log)")
 	showVersion       = flag.Bool("version", false, "Show version and exit")
+	enableFlam        = flag.Bool("flam", false, "Enable flam detection (allow louder notes within threshold)")
 
 	// Default device lists
 	defaultInputs  = []string{"Finger Drum Pad"}
@@ -103,15 +104,20 @@ func main() {
 		}
 	}
 
-	log.Printf("Connected to input: %s\n", inputName)
-	log.Printf("Connected to output: %s\n", outputName)
-	log.Printf("Time threshold: %dms, Velocity threshold: %d\n", *timeThreshold, *velocityThreshold)
+	log.Printf("MIDI Deduper v%s started with effective configuration:\n", version)
+	log.Printf("  -input=%q\n", inputName)
+	log.Printf("  -output=%q\n", outputName)
+	log.Printf("  -time=%d\n", *timeThreshold)
+	log.Printf("  -velocity=%d\n", *velocityThreshold)
+	log.Printf("  -flam=%v\n", *enableFlam)
+	log.Printf("  -debug=%v\n", *debug)
 
 	// Create deduper
 	deduperConfig := deduper.Config{
 		TimeThreshold:     time.Duration(*timeThreshold) * time.Millisecond,
 		VelocityThreshold: uint8(*velocityThreshold),
 		HistoryMaxSize:    25000,
+		FlamDetection:     *enableFlam,
 		Debug:             *debug,
 		Logger:            logger,
 	}
@@ -147,6 +153,12 @@ func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper)
 
 	switch {
 	case msg.GetNoteOn(&channel, &note, &velocity):
+		// Treat Note On with velocity 0 as Note Off
+		if velocity == 0 {
+			handleNoteOff(output, channel, note)
+			return
+		}
+
 		deduperNote := deduper.Note{
 			Timestamp: time.Now(),
 			Number:    note,
@@ -171,15 +183,7 @@ func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper)
 		}
 
 	case msg.GetNoteOff(&channel, &note, &velocity):
-		// Forward note off messages (no deduplication for note off)
-		send := midi.NoteOff(channel, note)
-		err := output.Send(send)
-		if err != nil && *debug {
-			debugLog(fmt.Sprintf("Error sending note off: %v", err))
-		}
-		if *debug {
-			debugLog(fmt.Sprintf("Note OFF: ch=%d note=%d", channel, note))
-		}
+		handleNoteOff(output, channel, note)
 
 	default:
 		// Forward all other MIDI messages (CC, pitch bend, etc.)
@@ -187,6 +191,15 @@ func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper)
 		if err != nil && *debug {
 			debugLog(fmt.Sprintf("Error forwarding message: %v", err))
 		}
+	}
+}
+
+func handleNoteOff(output drivers.Out, channel, note uint8) {
+	// Forward note off messages (no deduplication for note off)
+	send := midi.NoteOff(channel, note)
+	err := output.Send(send)
+	if err != nil && *debug {
+		debugLog(fmt.Sprintf("Error sending note off: %v", err))
 	}
 }
 
