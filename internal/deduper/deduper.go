@@ -12,7 +12,8 @@ type Config struct {
 	HistoryMaxSize    int           // Maximum size of history
 	FlamDetection     bool          // Enable flam detection (allow louder notes)
 	Debug             bool          // Enable debug logging
-	Logger            func(string)  // Logger function
+	Logger            func(string)  // Logger function (Debug)
+	WarnLogger        func(string)  // Logger function (Warn)
 }
 
 // Note represents a MIDI note event
@@ -61,9 +62,9 @@ func (d *Deduper) ShouldFilter(note Note) bool {
 
 		if note.Velocity < d.config.VelocityThreshold {
 			d.statsDuplicate++
-			if d.config.Debug && d.config.Logger != nil {
+			if d.config.WarnLogger != nil {
 				percentage := float64(d.statsDuplicate) / float64(d.statsTotal) * 100
-				d.config.Logger(fmt.Sprintf("Duplicate Note detected: Note: %d | Velocity: %d | Interval: %v | Stats: %d/%d (%.2f%%)",
+				d.config.WarnLogger(fmt.Sprintf("Duplicate Note detected: Note: %d | Velocity: %d | Interval: %v | Stats: %d/%d (%.2f%%)",
 					note.Number, note.Velocity, timeDiff, d.statsDuplicate, d.statsTotal, percentage))
 			}
 			return true

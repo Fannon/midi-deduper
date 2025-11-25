@@ -6,11 +6,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/Fannon/midi-deduper/internal/deduper"
+	"github.com/Fannon/midi-deduper/internal/logger"
 	midiutil "github.com/Fannon/midi-deduper/internal/midi"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/drivers"
@@ -34,9 +34,6 @@ var (
 	// Default device lists
 	defaultInputs  = []string{"Finger Drum Pad"}
 	defaultOutputs = []string{"loop1", "loopMIDI Port"}
-
-	// Debug log file
-	logFile *os.File
 )
 
 func main() {
@@ -58,12 +55,15 @@ func main() {
 		time.Sleep(time.Duration(*waitSeconds) * time.Second)
 	}
 
-	// Setup debug logging
-	var logger func(string)
+	// Setup logger
+	appLogger, err := logger.New(*debug)
+	if err != nil {
+		log.Printf("Warning: Could not setup logger: %v\n", err)
+	}
+	defer appLogger.Close()
+
 	if *debug {
-		setupDebugLogging()
-		defer closeDebugLogging()
-		logger = debugLog
+		appLogger.Debug(fmt.Sprintf("MIDI Deduper v%s started at %s", version, time.Now().Format(time.RFC3339)))
 	}
 
 	// Initialize MIDI
@@ -72,7 +72,6 @@ func main() {
 	// Find input device
 	var inputPort drivers.In
 	var inputName string
-	var err error
 
 	if *inputDevice != "" {
 		inputPort, err = midiutil.FindInput(*inputDevice)
@@ -119,8 +118,15 @@ func main() {
 		HistoryMaxSize:    25000,
 		FlamDetection:     *enableFlam,
 		Debug:             *debug,
-		Logger:            logger,
+		Logger:            appLogger.Debug,
+		WarnLogger:        nil,
 	}
+
+	// Only enable warn logger if debug is enabled (to avoid spamming console in normal operation)
+	if *debug {
+		deduperConfig.WarnLogger = appLogger.Warn
+	}
+
 	d := deduper.New(deduperConfig)
 
 	// Open output port
@@ -131,7 +137,7 @@ func main() {
 
 	// Open MIDI ports
 	stop, err := midi.ListenTo(inputPort, func(msg midi.Message, timestampms int32) {
-		handleMIDIMessage(msg, outputPort, d)
+		handleMIDIMessage(msg, outputPort, d, appLogger)
 	})
 	if err != nil {
 		log.Fatalf("Error listening to MIDI input: %v\n", err)
@@ -148,14 +154,14 @@ func main() {
 	log.Println("Shutting down...")
 }
 
-func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper) {
+func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper, l *logger.Logger) {
 	var channel, note, velocity uint8
 
 	switch {
 	case msg.GetNoteOn(&channel, &note, &velocity):
 		// Treat Note On with velocity 0 as Note Off
 		if velocity == 0 {
-			handleNoteOff(output, channel, note)
+			handleNoteOff(output, channel, note, l)
 			return
 		}
 
@@ -170,78 +176,31 @@ func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper)
 			// Not a duplicate, forward the note
 			send := midi.NoteOn(channel, note, velocity)
 			err := output.Send(send)
-			if err != nil && *debug {
-				debugLog(fmt.Sprintf("Error sending note on: %v", err))
+			if err != nil {
+				l.Debug(fmt.Sprintf("Error sending note on: %v", err))
 			}
-			if *debug {
-				debugLog(fmt.Sprintf("Note ON:  ch=%d note=%d vel=%d", channel, note, velocity))
-			}
+			l.Debug(fmt.Sprintf("Note ON:  ch=%d note=%d vel=%d", channel, note, velocity))
 		} else {
-			if *debug {
-				debugLog(fmt.Sprintf("FILTERED: ch=%d note=%d vel=%d", channel, note, velocity))
-			}
+			l.Debug(fmt.Sprintf("FILTERED: ch=%d note=%d vel=%d", channel, note, velocity))
 		}
 
 	case msg.GetNoteOff(&channel, &note, &velocity):
-		handleNoteOff(output, channel, note)
+		handleNoteOff(output, channel, note, l)
 
 	default:
 		// Forward all other MIDI messages (CC, pitch bend, etc.)
 		err := output.Send(msg)
-		if err != nil && *debug {
-			debugLog(fmt.Sprintf("Error forwarding message: %v", err))
+		if err != nil {
+			l.Debug(fmt.Sprintf("Error forwarding message: %v", err))
 		}
 	}
 }
 
-func handleNoteOff(output drivers.Out, channel, note uint8) {
+func handleNoteOff(output drivers.Out, channel, note uint8, l *logger.Logger) {
 	// Forward note off messages (no deduplication for note off)
 	send := midi.NoteOff(channel, note)
 	err := output.Send(send)
-	if err != nil && *debug {
-		debugLog(fmt.Sprintf("Error sending note off: %v", err))
-	}
-}
-
-func setupDebugLogging() {
-	// Create tmp directory if it doesn't exist
-	tmpDir := "./tmp"
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		log.Printf("Warning: Could not create tmp directory: %v\n", err)
-		return
-	}
-
-	// Create log file with ISO date
-	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	logPath := filepath.Join(tmpDir, fmt.Sprintf("%s.log", timestamp))
-
-	var err error
-	logFile, err = os.Create(logPath)
 	if err != nil {
-		log.Printf("Warning: Could not create log file: %v\n", err)
-		return
-	}
-
-	log.Printf("Debug logging to: %s\n", logPath)
-	debugLog(fmt.Sprintf("MIDI Deduper v%s started at %s", version, time.Now().Format(time.RFC3339)))
-	debugLog(fmt.Sprintf("Config: time=%dms, velocity=%d", *timeThreshold, *velocityThreshold))
-}
-
-func closeDebugLogging() {
-	if logFile != nil {
-		logFile.Close()
-	}
-}
-
-func debugLog(message string) {
-	timestamp := time.Now().Format("2006-01-02 15:04:05.000")
-	logLine := fmt.Sprintf("[%s] %s\n", timestamp, message)
-
-	// Print to console
-	fmt.Print(logLine)
-
-	// Write to file
-	if logFile != nil {
-		logFile.WriteString(logLine)
+		l.Debug(fmt.Sprintf("Error sending note off: %v", err))
 	}
 }
