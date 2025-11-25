@@ -18,39 +18,51 @@ Before you start, you need two main things installed:
     go version
     ```
 
-### 2. Install GCC (C Compiler)
-
-#### Windows
-You need a GCC compiler for Windows. We recommend **TDM-GCC**.
-1.  Download **TDM-GCC** from [jmeubank.github.io/tdm-gcc/](https://jmeubank.github.io/tdm-gcc/).
-2.  Run the installer. **Important**: Ensure the "Add to Path" option is checked (it usually is by default).
-3.  After installation, **restart your terminal** (or VS Code) to pick up the new path.
-4.  Verify by running:
-    ```bash
-    gcc --version
-    ```
-    *If you see a version number, you are ready!*
-
-#### Linux (Ubuntu/Debian/WSL)
-You need the build essentials and ALSA sound headers.
-```bash
-sudo apt-get update
-sudo apt-get install build-essential libasound2-dev
-```
-
 #### macOS
 Install Xcode Command Line Tools:
 ```bash
-
-To run all tests:
-```bash
-go test ./...
+xcode-select --install
 ```
 
-To run tests with verbose output (shows each test name):
+---
+
+## How to Build
+
+Once prerequisites are met, building is simple.
+
+### Option 1: Automatic Build
+
+**Bash (Git Bash / WSL):**
 ```bash
-go test -v ./...
+./build.sh
 ```
+
+**Windows CMD:**
+```cmd
+build.bat
+```
+
+This will create both:
+*   `midi-deduper.exe` (Console version)
+*   `midi-deduper-headless.exe` (Background version)
+
+### Option 2: Manual Build
+
+1.  Open your terminal in the project directory.
+2.  Download dependencies:
+    ```bash
+    go mod tidy
+    ```
+3.  Compile the standard code:
+    ```bash
+    go build -ldflags "-s -w" -o midi-deduper.exe ./cmd/midi-deduper
+    ```
+4.  Compile the headless code (Windows only):
+    ```bash
+    go build -ldflags "-H=windowsgui -s -w" -o midi-deduper-headless.exe ./cmd/midi-deduper
+    ```
+
+5.  **Success!** You should now see the executables in your folder.
 
 ---
 

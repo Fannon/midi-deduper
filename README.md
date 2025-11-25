@@ -49,18 +49,28 @@ A standalone Go executable is available for running as a background tool or CLI 
 
 > **New to Go?** Check out our detailed [Building Guide](BUILDING.md) for step-by-step instructions.
 
-**Quick Build (Windows):**
-Simply run the included `build.bat` script. It will create two executables:
+**Quick Build:**
+Simply run the included build script. It will create two executables:
 *   `midi-deduper.exe`: Standard console application (for testing/debugging).
 *   `midi-deduper-headless.exe`: Hidden background application (for auto-start).
+
+**Bash (Git Bash / WSL):**
+```bash
+./build.sh
+```
+
+**Windows CMD:**
+```cmd
+build.bat
+```
 
 **Manual Build:**
 ```powershell
 go mod tidy
 # Standard
-go build -o midi-deduper.exe ./cmd/midi-deduper
+go build -ldflags "-s -w" -o midi-deduper.exe ./cmd/midi-deduper
 # Headless (Hidden Window)
-go build -ldflags "-H=windowsgui" -o midi-deduper-headless.exe ./cmd/midi-deduper
+go build -ldflags "-H=windowsgui -s -w" -o midi-deduper-headless.exe ./cmd/midi-deduper
 ```
 
 ### Usage
@@ -92,4 +102,8 @@ To run the deduper automatically when you log in without a popup window:
 5.  (Optional) Right-click the shortcut -> Properties -> Target, and add flags like `-debug` or `-input "..."`.
 
 **Stopping the Headless Version:**
-Since there is no window, use the included `stop-midi-deduper.bat` script or run `taskkill /F /IM midi-deduper-headless.exe` in a terminal.
+Since there is no window, use the included scripts:
+*   **Bash**: `./stop.sh`
+*   **CMD**: `stop-midi-deduper.bat`
+*   **PowerShell**: `stop-midi-deduper.ps1`
+*   Or run `taskkill /F /IM midi-deduper-headless.exe` manually.
