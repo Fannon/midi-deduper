@@ -1,7 +1,2 @@
-github.com/rakyll/portmidi v0.0.0-20201020180702-d436ceaa537a h1:+qeh9b4LlO8AYVvm+TG4OXDRwBynTLk82t0HDBBBOQ8=
-github.com/rakyll/portmidi v0.0.0-20201020180702-d436ceaa537a/go.mod h1:xKffaBd7e1YUoLpR2azvJqkxEdUDNGNDMlsUNdv6Bcs=
-gitlab.com/gomidi/midi/v2 v2.0.0-alpha.15/go.mod h1:quTyMKSQ4Klevxu6gY4gy2USbeZra0fV5SalndmPfsY=
 gitlab.com/gomidi/midi/v2 v2.3.16 h1:yufWSENyjnJ4LFQa9BerzUm4E4aLfTyzw5nmnCteO0c=
 gitlab.com/gomidi/midi/v2 v2.3.16/go.mod h1:jDpP4O4skYi+7iVwt6Zyp18bd2M4hkjtMuw2cmgKgfw=
-gitlab.com/gomidi/midi/v2/drivers/portmididrv v0.0.0-20220419145818-fccd5eb4f650 h1:86eMUMR2QIdIG65maXomPovaqaDPvWilIW+Jt0FsWuo=
-gitlab.com/gomidi/midi/v2/drivers/portmididrv v0.0.0-20220419145818-fccd5eb4f650/go.mod h1:R4tRM34JRTVMyf0HDbhB47oQEo8+lOwssueRXQOoWbk=

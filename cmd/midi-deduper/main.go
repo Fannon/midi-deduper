@@ -14,7 +14,7 @@ import (
 	midiutil "github.com/Fannon/midi-deduper/internal/midi"
 	"gitlab.com/gomidi/midi/v2"
 	"gitlab.com/gomidi/midi/v2/drivers"
-	_ "gitlab.com/gomidi/midi/v2/drivers/portmididrv" // autoregister driver
+	_ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv" // autoregister driver
 )
 
 const version = "1.0.0"
