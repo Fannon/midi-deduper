@@ -109,3 +109,5 @@ statistics/
 
 # Go debug logs
 tmp/
+
+*.exe

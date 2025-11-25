@@ -117,6 +117,12 @@ func main() {
 	}
 	d := deduper.New(deduperConfig)
 
+	// Open output port
+	if err := outputPort.Open(); err != nil {
+		log.Fatalf("Error opening output port: %v\n", err)
+	}
+	defer outputPort.Close()
+
 	// Open MIDI ports
 	stop, err := midi.ListenTo(inputPort, func(msg midi.Message, timestampms int32) {
 		handleMIDIMessage(msg, outputPort, d)
