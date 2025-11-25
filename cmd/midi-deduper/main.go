@@ -26,7 +26,6 @@ var (
 	timeThreshold     = flag.Int("time", 50, "Time threshold in milliseconds for duplicate detection")
 	velocityThreshold = flag.Int("velocity", 127, "Velocity threshold (0-127) for duplicate detection")
 	listDevices       = flag.Bool("list", false, "List available MIDI devices and exit")
-	waitSeconds       = flag.Int("wait", 0, "Startup delay in seconds (useful for Windows Service)")
 	debug             = flag.Bool("debug", false, "Enable debug logging (also writes to ./tmp/<ISO-date>.log)")
 	showVersion       = flag.Bool("version", false, "Show version and exit")
 	enableFlam        = flag.Bool("flam", false, "Enable flam detection (allow louder notes within threshold)")
@@ -49,12 +48,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Startup delay (e.g., wait for loopMIDI to start)
-	if *waitSeconds > 0 {
-		log.Printf("Waiting %d seconds before starting...\n", *waitSeconds)
-		time.Sleep(time.Duration(*waitSeconds) * time.Second)
-	}
-
 	// Setup logger
 	appLogger, err := logger.New(*debug)
 	if err != nil {
@@ -69,38 +62,48 @@ func main() {
 	// Initialize MIDI
 	defer midi.CloseDriver()
 
-	// Find input device
+	// Find devices with retry loop
 	var inputPort drivers.In
 	var inputName string
-
-	if *inputDevice != "" {
-		inputPort, err = midiutil.FindInput(*inputDevice)
-		if err != nil {
-			log.Fatalf("Error finding input device '%s': %v\n", *inputDevice, err)
-		}
-		inputName = *inputDevice
-	} else {
-		inputPort, inputName, err = midiutil.FindInputFromList(defaultInputs)
-		if err != nil {
-			log.Fatalf("Error finding input device from defaults: %v\n", err)
-		}
-	}
-
-	// Find output device
 	var outputPort drivers.Out
 	var outputName string
 
-	if *outputDevice != "" {
-		outputPort, err = midiutil.FindOutput(*outputDevice)
-		if err != nil {
-			log.Fatalf("Error finding output device '%s': %v\n", *outputDevice, err)
+	log.Println("Waiting for MIDI devices...")
+
+	for {
+		var inErr, outErr error
+
+		// Find input device
+		if *inputDevice != "" {
+			inputPort, inErr = midiutil.FindInput(*inputDevice)
+			if inErr == nil {
+				inputName = *inputDevice
+			}
+		} else {
+			inputPort, inputName, inErr = midiutil.FindInputFromList(defaultInputs)
 		}
-		outputName = *outputDevice
-	} else {
-		outputPort, outputName, err = midiutil.FindOutputFromList(defaultOutputs)
-		if err != nil {
-			log.Fatalf("Error finding output device from defaults: %v\n", err)
+
+		// Find output device
+		if *outputDevice != "" {
+			outputPort, outErr = midiutil.FindOutput(*outputDevice)
+			if outErr == nil {
+				outputName = *outputDevice
+			}
+		} else {
+			outputPort, outputName, outErr = midiutil.FindOutputFromList(defaultOutputs)
 		}
+
+		// If both found, proceed
+		if inErr == nil && outErr == nil {
+			log.Printf("Devices found: Input=%q, Output=%q\n", inputName, outputName)
+			break
+		}
+
+		// Log status and wait
+		if *debug {
+			appLogger.Debug(fmt.Sprintf("Devices not ready. Input err: %v. Output err: %v. Retrying in 5s...", inErr, outErr))
+		}
+		time.Sleep(5 * time.Second)
 	}
 
 	log.Printf("MIDI Deduper v%s started with effective configuration:\n", version)

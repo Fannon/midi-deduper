@@ -43,21 +43,25 @@ Don't forget to hit the "Save & Apply" button after you made changes.
 
 ## Go CLI Implementation
 
-A standalone Go executable is available for running as a background service or CLI tool.
+A standalone Go executable is available for running as a background tool or CLI application.
 
 ### Build Instructions
 
-> **New to Go?** Check out our detailed [Building Guide](BUILDING.md) for step-by-step instructions on setting up Go, GCC, and compiling the project.
+> **New to Go?** Check out our detailed [Building Guide](BUILDING.md) for step-by-step instructions.
 
-1. **Prerequisites**:
-   - Go (installed)
-   - C Compiler (TDM-GCC or MinGW-w64) - Required for `rtmididrv`
+**Quick Build (Windows):**
+Simply run the included `build.bat` script. It will create two executables:
+*   `midi-deduper.exe`: Standard console application (for testing/debugging).
+*   `midi-deduper-headless.exe`: Hidden background application (for auto-start).
 
-2. **Build**:
-   ```powershell
-   go mod tidy
-   go build -o midi-deduper.exe ./cmd/midi-deduper
-   ```
+**Manual Build:**
+```powershell
+go mod tidy
+# Standard
+go build -o midi-deduper.exe ./cmd/midi-deduper
+# Headless (Hidden Window)
+go build -ldflags "-H=windowsgui" -o midi-deduper-headless.exe ./cmd/midi-deduper
+```
 
 ### Usage
 
@@ -71,23 +75,21 @@ midi-deduper.exe
 # Run with specific devices and thresholds
 midi-deduper.exe -input "My Keyboard" -output "LoopMIDI" -time 60 -velocity 100
 
-# Run with debug logging (writes to ./tmp/)
+# Run with debug logging (writes to ./logs/)
 midi-deduper.exe -debug
 ```
 
-### Windows Service Setup (NSSM)
+> **Note:** The application includes a smart retry loop. If your MIDI devices are not connected yet (or LoopMIDI hasn't started), it will wait and retry every 5 seconds until they appear.
 
-To run as a background service that starts automatically:
+### Auto-Start (Windows Startup)
 
-1. Download **NSSM** (Non-Sucking Service Manager).
-2. Install the service:
-   ```powershell
-   nssm install MidiDeduper "C:\path\to\midi-deduper.exe"
-   ```
-3. Configure arguments in NSSM GUI:
-   - Arguments: `-wait 10 -input "My Device" -output "loopMIDI"`
-   - The `-wait 10` is important to allow the loopMIDI driver to initialize before the deduper starts.
-4. Start the service:
-   ```powershell
-   nssm start MidiDeduper
-   ```
+To run the deduper automatically when you log in without a popup window:
+
+1.  Build the headless version (`midi-deduper-headless.exe`).
+2.  Create a shortcut to `midi-deduper-headless.exe`.
+3.  Press `Win+R`, type `shell:startup`, and press Enter.
+4.  Move the shortcut into this folder.
+5.  (Optional) Right-click the shortcut -> Properties -> Target, and add flags like `-debug` or `-input "..."`.
+
+**Stopping the Headless Version:**
+Since there is no window, use the included `stop-midi-deduper.bat` script or run `taskkill /F /IM midi-deduper-headless.exe` in a terminal.

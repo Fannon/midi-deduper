@@ -41,33 +41,6 @@ sudo apt-get install build-essential libasound2-dev
 #### macOS
 Install Xcode Command Line Tools:
 ```bash
-xcode-select --install
-```
-
----
-
-## How to Build
-
-Once prerequisites are met, building is simple.
-
-1.  Open your terminal in the project directory.
-2.  Download dependencies:
-    ```bash
-    go mod tidy
-    ```
-3.  Compile the code:
-    ```bash
-    go build -o midi-deduper.exe ./cmd/midi-deduper
-    ```
-    *(On Linux/macOS, use `-o midi-deduper` without .exe)*
-
-4.  **Success!** You should now see `midi-deduper.exe` in your folder.
-
----
-
-## How to Run Tests
-
-The project includes automated tests to verify the logic (like the deduplication algorithm).
 
 To run all tests:
 ```bash

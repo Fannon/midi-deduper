@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,16 +18,27 @@ type Logger struct {
 func New(debug bool) (*Logger, error) {
 	l := &Logger{debug: debug}
 	if debug {
-		if err := os.MkdirAll("./tmp", 0755); err != nil {
-			return nil, fmt.Errorf("could not create tmp directory: %v", err)
+		exePath, err := os.Executable()
+		if err != nil {
+			return nil, fmt.Errorf("could not get executable path: %v", err)
+		}
+		exeDir := filepath.Dir(exePath)
+		logDir := filepath.Join(exeDir, "logs")
+
+		if err := os.MkdirAll(logDir, 0755); err != nil {
+			return nil, fmt.Errorf("could not create log directory: %v", err)
 		}
 		timestamp := time.Now().Format("2006-01-02_15-04-05")
-		path := filepath.Join("./tmp", fmt.Sprintf("%s.log", timestamp))
+		path := filepath.Join(logDir, fmt.Sprintf("%s.log", timestamp))
 		f, err := os.Create(path)
 		if err != nil {
 			return nil, fmt.Errorf("could not create log file: %v", err)
 		}
 		l.file = f
+
+		// Redirect standard library log to this file as well
+		log.SetOutput(f)
+
 		fmt.Printf("Debug logging to: %s\n", path)
 	}
 	return l, nil
