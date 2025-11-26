@@ -62,99 +62,152 @@ func main() {
 	// Initialize MIDI
 	defer midi.CloseDriver()
 
-	// Find devices with retry loop
-	var inputPort drivers.In
-	var inputName string
-	var outputPort drivers.Out
-	var outputName string
+	// Wait for interrupt signal
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	log.Println("Waiting for MIDI devices...")
-
+	// Supervisor loop for auto-reconnection
 	for {
-		var inErr, outErr error
+		// Find devices with retry loop
+		var inputPort drivers.In
+		var inputName string
+		var outputPort drivers.Out
+		var outputName string
 
-		// Find input device
-		if *inputDevice != "" {
-			inputPort, inErr = midiutil.FindInput(*inputDevice)
-			if inErr == nil {
-				inputName = *inputDevice
+		log.Println("Waiting for MIDI devices...")
+
+		// Device Discovery Loop
+		for {
+			// Check for exit signal during discovery
+			select {
+			case <-sigChan:
+				log.Println("Shutting down...")
+				return
+			default:
 			}
-		} else {
-			inputPort, inputName, inErr = midiutil.FindInputFromList(defaultInputs)
-		}
 
-		// Find output device
-		if *outputDevice != "" {
-			outputPort, outErr = midiutil.FindOutput(*outputDevice)
-			if outErr == nil {
-				outputName = *outputDevice
+			var inErr, outErr error
+
+			// Find input device
+			if *inputDevice != "" {
+				inputPort, inErr = midiutil.FindInput(*inputDevice)
+				if inErr == nil {
+					inputName = *inputDevice
+				}
+			} else {
+				inputPort, inputName, inErr = midiutil.FindInputFromList(defaultInputs)
 			}
-		} else {
-			outputPort, outputName, outErr = midiutil.FindOutputFromList(defaultOutputs)
+
+			// Find output device
+			if *outputDevice != "" {
+				outputPort, outErr = midiutil.FindOutput(*outputDevice)
+				if outErr == nil {
+					outputName = *outputDevice
+				}
+			} else {
+				outputPort, outputName, outErr = midiutil.FindOutputFromList(defaultOutputs)
+			}
+
+			// If both found, proceed
+			if inErr == nil && outErr == nil {
+				log.Printf("Devices found: Input=%q, Output=%q\n", inputName, outputName)
+				break
+			}
+
+			// Log status and wait
+			if *debug {
+				appLogger.Debug(fmt.Sprintf("Devices not ready. Input err: %v. Output err: %v. Retrying in 5s...", inErr, outErr))
+			}
+
+			// Wait before retry, but listen for exit signal
+			select {
+			case <-sigChan:
+				log.Println("Shutting down...")
+				return
+			case <-time.After(5 * time.Second):
+				// Continue loop
+			}
 		}
 
-		// If both found, proceed
-		if inErr == nil && outErr == nil {
-			log.Printf("Devices found: Input=%q, Output=%q\n", inputName, outputName)
-			break
+		log.Printf("MIDI Deduper v%s started with effective configuration:\n", version)
+		log.Printf("  -input=%q\n", inputName)
+		log.Printf("  -output=%q\n", outputName)
+		log.Printf("  -time=%d\n", *timeThreshold)
+		log.Printf("  -velocity=%d\n", *velocityThreshold)
+		log.Printf("  -flam=%v\n", *enableFlam)
+		log.Printf("  -debug=%v\n", *debug)
+
+		// Create deduper
+		deduperConfig := deduper.Config{
+			TimeThreshold:     time.Duration(*timeThreshold) * time.Millisecond,
+			VelocityThreshold: uint8(*velocityThreshold),
+			HistoryMaxSize:    25000,
+			FlamDetection:     *enableFlam,
+			Debug:             *debug,
+			Logger:            appLogger.Debug,
+			WarnLogger:        nil,
 		}
 
-		// Log status and wait
+		// Only enable warn logger if debug is enabled
 		if *debug {
-			appLogger.Debug(fmt.Sprintf("Devices not ready. Input err: %v. Output err: %v. Retrying in 5s...", inErr, outErr))
+			deduperConfig.WarnLogger = appLogger.Warn
 		}
-		time.Sleep(5 * time.Second)
+
+		d := deduper.New(deduperConfig)
+
+		// Run the session (blocks until error, device loss, or signal)
+		err := runSession(inputPort, outputPort, d, appLogger, sigChan, inputName, outputName)
+
+		// Check if we should exit or reconnect
+		if err == nil {
+			// Normal shutdown requested via signal
+			log.Println("Shutting down...")
+			return
+		}
+
+		log.Printf("Session ended: %v. Restarting discovery in 2s...\n", err)
+		time.Sleep(2 * time.Second)
 	}
+}
 
-	log.Printf("MIDI Deduper v%s started with effective configuration:\n", version)
-	log.Printf("  -input=%q\n", inputName)
-	log.Printf("  -output=%q\n", outputName)
-	log.Printf("  -time=%d\n", *timeThreshold)
-	log.Printf("  -velocity=%d\n", *velocityThreshold)
-	log.Printf("  -flam=%v\n", *enableFlam)
-	log.Printf("  -debug=%v\n", *debug)
-
-	// Create deduper
-	deduperConfig := deduper.Config{
-		TimeThreshold:     time.Duration(*timeThreshold) * time.Millisecond,
-		VelocityThreshold: uint8(*velocityThreshold),
-		HistoryMaxSize:    25000,
-		FlamDetection:     *enableFlam,
-		Debug:             *debug,
-		Logger:            appLogger.Debug,
-		WarnLogger:        nil,
-	}
-
-	// Only enable warn logger if debug is enabled (to avoid spamming console in normal operation)
-	if *debug {
-		deduperConfig.WarnLogger = appLogger.Warn
-	}
-
-	d := deduper.New(deduperConfig)
-
+// runSession manages a single connected session. It returns nil on graceful shutdown, or error on failure/disconnect.
+func runSession(input drivers.In, output drivers.Out, d *deduper.Deduper, l *logger.Logger, sigChan chan os.Signal, inName, outName string) error {
 	// Open output port
-	if err := outputPort.Open(); err != nil {
-		log.Fatalf("Error opening output port: %v\n", err)
+	if err := output.Open(); err != nil {
+		return fmt.Errorf("error opening output port: %v", err)
 	}
-	defer outputPort.Close()
+	defer output.Close()
 
 	// Open MIDI ports
-	stop, err := midi.ListenTo(inputPort, func(msg midi.Message, timestampms int32) {
-		handleMIDIMessage(msg, outputPort, d, appLogger)
+	stop, err := midi.ListenTo(input, func(msg midi.Message, timestampms int32) {
+		handleMIDIMessage(msg, output, d, l)
 	})
 	if err != nil {
-		log.Fatalf("Error listening to MIDI input: %v\n", err)
+		return fmt.Errorf("error listening to MIDI input: %v", err)
 	}
 	defer stop()
 
 	log.Println("MIDI Deduper running. Press Ctrl+C to exit.")
 
-	// Wait for interrupt signal
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	<-sigChan
+	// Watchdog ticker to check device presence
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
 
-	log.Println("Shutting down...")
+	for {
+		select {
+		case <-sigChan:
+			return nil // Graceful shutdown
+
+		case <-ticker.C:
+			// Check if devices are still present
+			if !midiutil.IsDevicePresent(inName, "input") {
+				return fmt.Errorf("input device %q lost", inName)
+			}
+			if !midiutil.IsDevicePresent(outName, "output") {
+				return fmt.Errorf("output device %q lost", outName)
+			}
+		}
+	}
 }
 
 func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper, l *logger.Logger) {

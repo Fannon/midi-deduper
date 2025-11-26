@@ -92,3 +92,14 @@ func ListDevices() {
 		fmt.Printf("  %d: %s\n", i, out.String())
 	}
 }
+
+// IsDevicePresent checks if a device with the given name is currently available
+func IsDevicePresent(name, portType string) bool {
+	if portType == "input" {
+		_, err := FindInput(name)
+		return err == nil
+	}
+	// output
+	_, err := FindOutput(name)
+	return err == nil
+}
