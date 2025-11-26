@@ -129,6 +129,10 @@ func main() {
 			}
 		}
 
+		// Give Windows a moment to settle the device handles before opening
+		log.Println("Waiting 1s for devices to stabilize...")
+		time.Sleep(1 * time.Second)
+
 		log.Printf("MIDI Deduper v%s started with effective configuration:\n", version)
 		log.Printf("  -input=%q\n", inputName)
 		log.Printf("  -output=%q\n", outputName)
@@ -145,12 +149,7 @@ func main() {
 			FlamDetection:     *enableFlam,
 			Debug:             *debug,
 			Logger:            appLogger.Debug,
-			WarnLogger:        nil,
-		}
-
-		// Only enable warn logger if debug is enabled
-		if *debug {
-			deduperConfig.WarnLogger = appLogger.Warn
+			WarnLogger:        appLogger.Warn,
 		}
 
 		d := deduper.New(deduperConfig)
@@ -183,31 +182,23 @@ func runSession(input drivers.In, output drivers.Out, d *deduper.Deduper, l *log
 		handleMIDIMessage(msg, output, d, l)
 	})
 	if err != nil {
+		// Check for common Windows "device busy" error
+		// "MidiInWinMM::openPort: error creating Windows MM MIDI input port." is the typical error from rtmidi
+		errStr := err.Error()
+		if len(errStr) > 0 { // Simple check, could be more specific if needed
+			return fmt.Errorf("failed to open input device (is it used by a DAW/Chrome?): %v", err)
+		}
 		return fmt.Errorf("error listening to MIDI input: %v", err)
 	}
 	defer stop()
 
 	log.Println("MIDI Deduper running. Press Ctrl+C to exit.")
 
-	// Watchdog ticker to check device presence
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-sigChan:
-			return nil // Graceful shutdown
-
-		case <-ticker.C:
-			// Check if devices are still present
-			if !midiutil.IsDevicePresent(inName, "input") {
-				return fmt.Errorf("input device %q lost", inName)
-			}
-			if !midiutil.IsDevicePresent(outName, "output") {
-				return fmt.Errorf("output device %q lost", outName)
-			}
-		}
-	}
+	// Wait for interrupt signal
+	// Note: We don't need a watchdog to poll device presence.
+	// If the device disconnects, the MIDI listener will naturally error out.
+	<-sigChan
+	return nil // Graceful shutdown
 }
 
 func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper, l *logger.Logger) {

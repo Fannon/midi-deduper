@@ -93,13 +93,25 @@ func ListDevices() {
 	}
 }
 
-// IsDevicePresent checks if a device with the given name is currently available
+// IsDevicePresent checks if a device with the given name is currently available.
+// It uses strict name matching (case-insensitive) to ensure we are monitoring the correct device.
 func IsDevicePresent(name, portType string) bool {
+	// Simple list check first (fast path)
+	found := false
 	if portType == "input" {
-		_, err := FindInput(name)
-		return err == nil
+		for _, port := range midi.GetInPorts() {
+			if strings.EqualFold(port.String(), name) {
+				found = true
+				break
+			}
+		}
+	} else {
+		for _, port := range midi.GetOutPorts() {
+			if strings.EqualFold(port.String(), name) {
+				found = true
+				break
+			}
+		}
 	}
-	// output
-	_, err := FindOutput(name)
-	return err == nil
+	return found
 }

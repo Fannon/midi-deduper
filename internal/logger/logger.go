@@ -68,9 +68,6 @@ func (l *Logger) Debug(msg string) {
 
 // Warn logs a message in yellow color to console and to file
 func (l *Logger) Warn(msg string) {
-	if !l.debug {
-		return
-	}
 	ts := time.Now().Format("15:04:05.000")
 
 	// Print to console with yellow color (ANSI escape code \033[33m)
