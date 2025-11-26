@@ -11,51 +11,37 @@ import (
 // FindInput finds a MIDI input device by name (case-insensitive, suffix-ignoring)
 // Windows sometimes adds suffixes like " 2", " 3" when USB port changes
 func FindInput(name string) (drivers.In, error) {
-	inputs := midi.GetInPorts()
-	
-	// Try exact match first
-	for _, in := range inputs {
-		if strings.EqualFold(in.String(), name) {
-			return in, nil
-		}
-	}
-	
-	// Try prefix match (ignore Windows suffixes)
-	normalizedName := strings.ToLower(strings.TrimSpace(name))
-	for _, in := range inputs {
-		deviceName := strings.ToLower(strings.TrimSpace(in.String()))
-		// Check if device name starts with the search name
-		if strings.HasPrefix(deviceName, normalizedName) {
-			return in, nil
-		}
-	}
-	
-	return nil, fmt.Errorf("MIDI input device '%s' not found", name)
+	return findPort(midi.GetInPorts(), name, "input")
 }
 
 // FindOutput finds a MIDI output device by name (case-insensitive, suffix-ignoring)
 // Windows sometimes adds suffixes like " 2", " 3" when USB port changes
 func FindOutput(name string) (drivers.Out, error) {
-	outputs := midi.GetOutPorts()
-	
+	return findPort(midi.GetOutPorts(), name, "output")
+}
+
+// findPort is a generic helper to find a MIDI port by name
+func findPort[P fmt.Stringer](ports []P, name, portType string) (P, error) {
+	var zero P
+
 	// Try exact match first
-	for _, out := range outputs {
-		if strings.EqualFold(out.String(), name) {
-			return out, nil
+	for _, port := range ports {
+		if strings.EqualFold(port.String(), name) {
+			return port, nil
 		}
 	}
-	
+
 	// Try prefix match (ignore Windows suffixes)
 	normalizedName := strings.ToLower(strings.TrimSpace(name))
-	for _, out := range outputs {
-		deviceName := strings.ToLower(strings.TrimSpace(out.String()))
+	for _, port := range ports {
+		deviceName := strings.ToLower(strings.TrimSpace(port.String()))
 		// Check if device name starts with the search name
 		if strings.HasPrefix(deviceName, normalizedName) {
-			return out, nil
+			return port, nil
 		}
 	}
-	
-	return nil, fmt.Errorf("MIDI output device '%s' not found", name)
+
+	return zero, fmt.Errorf("MIDI %s device '%s' not found", portType, name)
 }
 
 // FindInputFromList tries to find the first available input device from a list of names
@@ -96,7 +82,7 @@ func ListDevices() {
 	for i, in := range inputs {
 		fmt.Printf("  %d: %s\n", i, in.String())
 	}
-	
+
 	fmt.Println("\nAvailable MIDI Output Devices:")
 	outputs := midi.GetOutPorts()
 	if len(outputs) == 0 {
@@ -106,4 +92,3 @@ func ListDevices() {
 		fmt.Printf("  %d: %s\n", i, out.String())
 	}
 }
-

@@ -2,6 +2,7 @@ package deduper
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -29,6 +30,7 @@ type Deduper struct {
 	history        []Note
 	statsTotal     uint64
 	statsDuplicate uint64
+	mu             sync.Mutex
 }
 
 // New creates a new Deduper instance
@@ -42,6 +44,9 @@ func New(config Config) *Deduper {
 // ShouldFilter determines if a note should be filtered out as a duplicate
 // Returns true if the note is a duplicate and should be filtered
 func (d *Deduper) ShouldFilter(note Note) bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	d.statsTotal++
 	lastNote := d.findLatestNote(note)
 
@@ -77,6 +82,7 @@ func (d *Deduper) ShouldFilter(note Note) bool {
 }
 
 // findLatestNote finds the latest matching note in history within the time threshold
+// This method should be called while holding the lock
 func (d *Deduper) findLatestNote(latestNote Note) *Note {
 	// Search backwards through history
 	for i := len(d.history) - 1; i >= 0; i-- {
@@ -93,6 +99,7 @@ func (d *Deduper) findLatestNote(latestNote Note) *Note {
 }
 
 // addToHistory adds a note to the history, managing size limits
+// This method should be called while holding the lock
 func (d *Deduper) addToHistory(note Note) {
 	// Ensure history does not grow endless
 	if len(d.history) >= d.config.HistoryMaxSize {
