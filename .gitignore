@@ -106,3 +106,9 @@ dist
 web/lib/
 
 statistics/
+
+# Go debug logs
+tmp/
+
+*.exe
+*.exe~

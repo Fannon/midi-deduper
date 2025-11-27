@@ -40,3 +40,70 @@ Don't forget to hit the "Save & Apply" button after you made changes.
 * Run `npm install`
 * Run `npm run build` (to copy over dependencies to webapp)
 * Run `npm start` 
+
+## Go CLI Implementation
+
+A standalone Go executable is available for running as a background tool or CLI application.
+
+### Build Instructions
+
+> **New to Go?** Check out our detailed [Building Guide](BUILDING.md) for step-by-step instructions.
+
+**Quick Build:**
+Simply run the included build script. It will create two executables:
+*   `midi-deduper.exe`: Standard console application (for testing/debugging).
+*   `midi-deduper-headless.exe`: Hidden background application (for auto-start).
+
+**Bash (Git Bash / WSL):**
+```bash
+./build.sh
+```
+
+**Windows CMD:**
+```cmd
+build.bat
+```
+
+**Manual Build:**
+```powershell
+go mod tidy
+# Standard
+go build -ldflags "-s -w" -o midi-deduper.exe ./cmd/midi-deduper
+# Headless (Hidden Window)
+go build -ldflags "-H=windowsgui -s -w" -o midi-deduper-headless.exe ./cmd/midi-deduper
+```
+
+### Usage
+
+```bash
+# List devices
+midi-deduper.exe -list
+
+# Run with defaults (looks for "Finger Drum Pad" -> "loop1")
+midi-deduper.exe
+
+# Run with specific devices and thresholds
+midi-deduper.exe -input "My Keyboard" -output "LoopMIDI" -time 60 -velocity 100
+
+# Run with debug logging (writes to ./logs/)
+midi-deduper.exe -debug
+```
+
+> **Note:** The application includes a smart retry loop. If your MIDI devices are not connected yet (or LoopMIDI hasn't started), it will wait and retry every 5 seconds until they appear.
+
+### Auto-Start (Windows Startup)
+
+To run the deduper automatically when you log in without a popup window:
+
+1.  Build the headless version (`midi-deduper-headless.exe`).
+2.  Create a shortcut to `midi-deduper-headless.exe`.
+3.  Press `Win+R`, type `shell:startup`, and press Enter.
+4.  Move the shortcut into this folder.
+5.  (Optional) Right-click the shortcut -> Properties -> Target, and add flags like `-debug` or `-input "..."`.
+
+**Stopping the Headless Version:**
+Since there is no window, use the included scripts:
+*   **Bash**: `./stop.sh`
+*   **CMD**: `stop-midi-deduper.bat`
+*   **PowerShell**: `stop-midi-deduper.ps1`
+*   Or run `taskkill /F /IM midi-deduper-headless.exe` manually.
