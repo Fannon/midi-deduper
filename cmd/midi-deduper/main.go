@@ -194,11 +194,38 @@ func runSession(input drivers.In, output drivers.Out, d *deduper.Deduper, l *log
 
 	log.Println("MIDI Deduper running. Press Ctrl+C to exit.")
 
-	// Wait for interrupt signal
-	// Note: We don't need a watchdog to poll device presence.
-	// If the device disconnects, the MIDI listener will naturally error out.
-	<-sigChan
-	return nil // Graceful shutdown
+	// Start watchdog to monitor device presence
+	deviceLostChan := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(2 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+				// Check if devices are still present
+				inputPresent := midiutil.IsDevicePresent(inName, "input")
+				outputPresent := midiutil.IsDevicePresent(outName, "output")
+
+				if !inputPresent || !outputPresent {
+					log.Printf("Device lost: input present=%v, output present=%v", inputPresent, outputPresent)
+					close(deviceLostChan)
+					return
+				}
+			case <-sigChan:
+				// Exit watchdog when shutdown signal received
+				return
+			}
+		}
+	}()
+
+	// Wait for either interrupt signal or device loss
+	select {
+	case <-sigChan:
+		return nil // Graceful shutdown
+	case <-deviceLostChan:
+		return fmt.Errorf("device disconnected")
+	}
 }
 
 func handleMIDIMessage(msg midi.Message, output drivers.Out, d *deduper.Deduper, l *logger.Logger) {
